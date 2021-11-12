@@ -36,22 +36,21 @@ func generate(url string, n int) (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
-func (c *Collection) Fetch(shortname string) *Entry {
+func (c *Collection) Fetch(shortname string) (*Entry, bool) {
 	c.m.RLock()
 	defer c.m.RUnlock()
 
 	got, ok := c.entries[shortname]
 	if !ok {
-		return nil
+		return nil, false
 	}
 	if got.Uses == 1 {
 		delete(c.entries, shortname)
-		got.Uses--
-		return got
+		return got, true
 	} else if got.Uses > 1 {
-		c.entries[shortname].Uses--
+		got.Uses--
 	}
-	return c.entries[shortname]
+	return got, false
 }
 
 func (c *Collection) Submit(

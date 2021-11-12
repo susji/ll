@@ -46,14 +46,14 @@ type server struct {
 }
 
 func (s *server) fetch(w http.ResponseWriter, short string) {
-	e := s.c.Fetch(short)
+	e, last := s.c.Fetch(short)
 	if e == nil {
 		log.Print("fetch: not found: ", short)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if e.Uses == 1 {
-		log.Print("fetch: final use for ", short)
+	if last {
+		log.Print("fetch: decayed due to usage: ", short)
 	}
 	w.WriteHeader(http.StatusOK)
 	data := map[string]string{"url": e.URL.String()}
