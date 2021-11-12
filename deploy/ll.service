@@ -28,6 +28,8 @@ ProtectControlGroups=yes
 PrivateDevices=yes
 RestrictSUIDSGID=true
 CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_DAC_READ_SEARCH
+MemoryDenyWriteExecute=true
+ReadWritePaths=-/var/lib/ll
 
 [Install]
 WantedBy=multi-user.target
