@@ -13,7 +13,8 @@ ExecStart=/usr/local/bin/ll					\
 			    -log-urls=${LL_LOG_URLS}		\
 			    -endpoint $LL_ENDPOINT		\
 			    -link-prefix $LL_LINK_PREFIX	\
-			    -accept-schema $LL_ACCEPT_SCHEMA
+			    -accept-schema $LL_ACCEPT_SCHEMA	\
+			    -dump-file $LL_DUMP_FILE
 Restart=on-failure
 RestartSec=5s
 PrivateTmp=true
