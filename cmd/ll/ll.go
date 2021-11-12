@@ -26,7 +26,7 @@ const DEFAULT_TEMPLATE = `
 `
 const (
 	reapTime = time.Minute
-	dumpTime = time.Minute * 5
+	dumpTime = time.Minute
 )
 
 type server struct {
@@ -149,7 +149,7 @@ func (s *server) reaper(ctx context.Context, t time.Duration) {
 func (s *server) dump() {
 	destfile, err := filepath.Abs(s.dumpFile)
 	if err != nil {
-		log.Print("dumper: ", err)
+		log.Print("dump: ", err)
 		return
 	}
 	tempdir := filepath.Dir(destfile)
