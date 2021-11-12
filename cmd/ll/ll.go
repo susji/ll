@@ -156,6 +156,7 @@ func (s *server) dump() {
 	f, err := os.CreateTemp(tempdir, "ll_dump_temp*")
 	if err != nil {
 		log.Print("dump: ", err)
+		return
 	}
 	s.c.Dump(f)
 	f.Close()
