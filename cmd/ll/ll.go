@@ -146,28 +146,31 @@ func (s *server) reaper(ctx context.Context, t time.Duration) {
 	}
 }
 
-func (s *server) dumper(ctx context.Context, t time.Duration) {
+func (s *server) dump() {
 	destfile, err := filepath.Abs(s.dumpFile)
 	if err != nil {
 		log.Print("dumper: ", err)
 		return
 	}
 	tempdir := filepath.Dir(destfile)
+	f, err := os.CreateTemp(tempdir, "ll_dump_temp*")
+	if err != nil {
+		log.Print("dump: ", err)
+	}
+	s.c.Dump(f)
+	f.Close()
+	if err := os.Rename(f.Name(), destfile); err != nil {
+		log.Print("dump: ", err)
+	}
+}
+
+func (s *server) dumper(ctx context.Context, t time.Duration) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(t):
-			f, err := os.CreateTemp(tempdir, "ll_dump_temp*")
-			if err != nil {
-				log.Print("dumper: ", err)
-				continue
-			}
-			s.c.Dump(f)
-			f.Close()
-			if err := os.Rename(f.Name(), destfile); err != nil {
-				log.Print("dumper: ", err)
-			}
+			s.dump()
 		}
 	}
 }
@@ -283,5 +286,8 @@ func main() {
 	log.Print("Data dump file........ ", s.dumpFile)
 	if err := srv.ListenAndServe(); err != nil {
 		log.Print(err)
+	}
+	if len(s.dumpFile) > 0 {
+		s.dump()
 	}
 }
