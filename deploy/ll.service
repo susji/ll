@@ -17,7 +17,8 @@ ExecStart=/usr/local/bin/ll					\
 			    -dump-file $LL_DUMP_FILE
 Restart=on-failure
 RestartSec=5s
-PrivateTmp=true
+# In case we wish to store our dump data under /tmp
+PrivateTmp=false
 NoNewPrivileges=true
 ProtectSystem=strict
 RestrictNamespaces=uts ipc pid user cgroup mnt
