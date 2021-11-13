@@ -18,6 +18,8 @@ import (
 	"github.com/susji/ll/collection"
 )
 
+const DEFAULT_CACHE_CONTROL = `public, max-age=60`
+
 const DEFAULT_HTML_TEMPLATE = `
 <html>
   <body>
@@ -40,6 +42,7 @@ type server struct {
 	shortbytes     int
 	linkPrefix     string
 	dumpFile       string
+	cacheControl   string
 	schema         map[string]interface{}
 
 	renderer *template.Template
@@ -48,6 +51,17 @@ type server struct {
 
 func urlToMap(u *url.URL) map[string]string {
 	return map[string]string{"url": u.String()}
+}
+
+func (s *server) setCaching(w http.ResponseWriter, ct string, e *collection.Entry) {
+	w.Header().Set("Vary", "Accept")
+	w.Header().Set("Cache-Control", s.cacheControl)
+	w.Header().Set("ETag", e.URL.String()+ct)
+}
+
+func (s *server) resetCaching(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Del("ETag")
 }
 
 func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
@@ -65,9 +79,11 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	// get the first MIME type which looks like a value we can
 	// use.
 	var rendererr error
-	switch strings.SplitN(r.Header.Get("Accept"), ",", 2)[0] {
+	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
+	s.setCaching(w, at, e)
+	switch at {
 	case "text/html":
-		w.Header().Add("Content-Type", "text/html")
+		w.Header().Add("Content-Type", at)
 		rendererr = s.renderer.Execute(w, urlToMap(e.URL))
 	case "application/json":
 		buf, err := json.Marshal(urlToMap(e.URL))
@@ -75,8 +91,9 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 			log.Print("fetch: cannot render as json: ", err)
 			rendererr = err
 		} else {
-			w.Header().Add("Content-Type", "application/json")
+			w.Header().Add("Content-Type", at)
 			w.Write(buf)
+			rendererr = nil
 		}
 	default:
 		w.Header().Add("Content-Type", "text/plain")
@@ -85,11 +102,12 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 
 	}
 	if rendererr != nil {
+		s.resetCaching(w)
 		log.Print("fetch: response rendering failed: ", rendererr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Print("fetch: ", short)
+	log.Printf("fetch: %s (%s)", short, w.Header().Get("Content-Type"))
 }
 
 func (s *server) submit(w http.ResponseWriter, long string) {
@@ -263,6 +281,11 @@ func main() {
 		"",
 		"File path to dump link data "+
 			"(used for initialization if exists during startup)")
+	flag.StringVar(
+		&s.cacheControl,
+		"cache-control",
+		DEFAULT_CACHE_CONTROL,
+		"Cache-Control header included in all our responses")
 	flag.Parse()
 
 	s.renderer = template.Must(
@@ -285,7 +308,7 @@ func main() {
 		// Three cases here to consider:
 		//   - file does not exist or open; it's OK and we move on
 		//   - file DOES exist and opens fine; move on
-		//   - file DOES exist and does NOT open fine; fatal out
+		//  - file DOES exist and does NOT open fine; fatal out
 		//
 		if _, err := os.Stat(s.dumpFile); err == nil {
 			f, err := os.Open(s.dumpFile)
@@ -299,10 +322,10 @@ func main() {
 						"Failed importing collection: ", err)
 				}
 			}
+
 		}
 		go s.dumper(ctx, dumpTime)
-		}
-
+	}
 	srv := http.Server{Addr: s.laddr, Handler: s}
 	sigint := make(chan os.Signal, 1)
 	signal.Notify(sigint, os.Interrupt)
