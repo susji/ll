@@ -281,19 +281,27 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	if len(s.dumpFile) > 0 {
-		f, err := os.Open(s.dumpFile)
-		if err == nil {
-			if err := s.c.Import(f); err == nil {
-				log.Print(
-					"Imported collection from ",
-					s.dumpFile)
-			} else {
-				log.Print(
-					"Failed importing collection: ", err)
+		//
+		// Three cases here to consider:
+		//   - file does not exist or open; it's OK and we move on
+		//   - file DOES exist and opens fine; move on
+		//   - file DOES exist and does NOT open fine; fatal out
+		//
+		if _, err := os.Stat(s.dumpFile); err == nil {
+			f, err := os.Open(s.dumpFile)
+			if err == nil {
+				if err := s.c.Import(f); err == nil {
+					log.Print(
+						"Imported collection from ",
+						s.dumpFile)
+				} else {
+					log.Fatal(
+						"Failed importing collection: ", err)
+				}
 			}
 		}
 		go s.dumper(ctx, dumpTime)
-	}
+		}
 
 	srv := http.Server{Addr: s.laddr, Handler: s}
 	sigint := make(chan os.Signal, 1)
