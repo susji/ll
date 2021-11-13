@@ -92,23 +92,19 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	var rendererr error
 	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
 	s.setCaching(w)
+	var ct string
+	rw := &bytes.Buffer{}
 	switch at {
 	case "text/html":
-		w.Header().Add("Content-Type", at)
-		rendererr = s.renderFetch.Execute(w, urlToMap(e.URL))
+		ct = at
+		rendererr = s.renderFetch.Execute(rw, urlToMap(e.URL))
 	case "application/json":
-		buf, err := json.Marshal(urlToMap(e.URL))
-		if err != nil {
-			log.Print("fetch: cannot render as json: ", err)
-			rendererr = err
-		} else {
-			w.Header().Add("Content-Type", at)
-			w.Write(buf)
-			rendererr = nil
-		}
+		ct = at
+		je := json.NewEncoder(rw)
+		rendererr = je.Encode(urlToMap(e.URL))
 	default:
-		w.Header().Add("Content-Type", "text/plain")
-		w.Write([]byte(e.URL.String()))
+		ct = "text/plain"
+		rw.WriteString(e.URL.String())
 		rendererr = nil
 
 	}
@@ -118,6 +114,8 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.Header().Add("Content-Type", ct)
+	rw.WriteTo(w)
 	log.Printf("fetch: %s (%s)", short, w.Header().Get("Content-Type"))
 }
 
