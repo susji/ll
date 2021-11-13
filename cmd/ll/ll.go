@@ -267,9 +267,9 @@ func main() {
 	flag.StringVar(&s.laddr, "listen", "localhost:19589", "HTTP listen address")
 	flag.IntVar(
 		&s.shortbytes,
-		"short-length",
+		"short-bytes",
 		3,
-		"Length of shortened URLs")
+		"Length of the random number in bytes which represents the shortname")
 	flag.StringVar(
 		&s.renderTemplate,
 		"render-html-template",
@@ -337,9 +337,10 @@ func main() {
 	}()
 	go s.reaper(ctx, reapTime)
 
-	log.Print("Submission endpoint... ", s.endpoint)
-	log.Print("URL logging........... ", s.logUrls)
 	log.Print("Listen address........ ", s.laddr)
+	log.Print("Submission endpoint... ", s.endpoint)
+	log.Print("Short bytes........... ", s.shortbytes)
+	log.Print("URL logging........... ", s.logUrls)
 	log.Print("Decay time............ ", s.decayTime)
 	log.Print("Decay uses............ ", s.decayUses)
 	log.Print("Link prefix........... ", s.linkPrefix)

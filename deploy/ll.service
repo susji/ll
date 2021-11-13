@@ -14,7 +14,8 @@ ExecStart=/usr/local/bin/ll					\
 			    -endpoint $LL_ENDPOINT		\
 			    -link-prefix $LL_LINK_PREFIX	\
 			    -accept-schema $LL_ACCEPT_SCHEMA	\
-			    -dump-file $LL_DUMP_FILE
+			    -dump-file $LL_DUMP_FILE		\
+			    -short-bytes $LL_SHORT_BYTES
 Restart=on-failure
 RestartSec=5s
 PrivateTmp=true
