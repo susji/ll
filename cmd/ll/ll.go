@@ -31,7 +31,7 @@ const DEFAULT_HTML_TEMPLATE_FETCH = `
 const DEFAULT_HTML_TEMPLATE_SUBMIT = `
 <html>
   <body>
-    <a rel="noreferrer" href="{{ .shorturl }}"> {{ .shorturl }}</a> &lt <- {{ .url }}
+    <a rel="noreferrer" href="{{ .shorturl }}"> {{ .shorturl }}</a> &lt;- {{ .url }}
   </body>
 </html>
 `
