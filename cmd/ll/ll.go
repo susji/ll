@@ -118,7 +118,7 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	if werr != nil {
 		log.Print("fetch: write error: ", werr)
 	}
-	log.Printf("fetch: %s (%s)", short, w.Header().Get("Content-Type"))
+	log.Printf("fetch: %s (%s)", short, ct)
 }
 
 func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
