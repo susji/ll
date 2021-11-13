@@ -157,7 +157,7 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 	switch at {
 	case "text/html":
 		ct = at
-		rendererr = s.renderSubmit.Execute(rw, urlToMap(u))
+		rendererr = s.renderSubmit.Execute(rw, urlsToMap(shorturl, u))
 	case "application/json":
 		ct = at
 		e := json.NewEncoder(rw)
