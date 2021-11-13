@@ -53,9 +53,8 @@ type server struct {
 	cacheControl                        string
 	schema                              map[string]interface{}
 
-	renderFetch  *template.Template
-	renderSubmit *template.Template
-	c            *collection.Collection
+	renderFetch, renderSubmit *template.Template
+	c                         *collection.Collection
 }
 
 func urlToMap(u *url.URL) map[string]string {
@@ -115,7 +114,10 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 		return
 	}
 	w.Header().Add("Content-Type", ct)
-	rw.WriteTo(w)
+	_, werr := rw.WriteTo(w)
+	if werr != nil {
+		log.Print("fetch: write error: ", werr)
+	}
 	log.Printf("fetch: %s (%s)", short, w.Header().Get("Content-Type"))
 }
 
@@ -172,8 +174,10 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 		return
 	}
 	w.Header().Set("Content-Type", ct)
-	rw.WriteTo(w)
-
+	_, werr := rw.WriteTo(w)
+	if werr != nil {
+		log.Print("submit: write error: ", werr)
+	}
 	if s.logUrls {
 		log.Print("submit: ", shortname, " <- ", u)
 	} else {
