@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -20,10 +21,17 @@ import (
 
 const DEFAULT_CACHE_CONTROL = `public, max-age=60`
 
-const DEFAULT_HTML_TEMPLATE = `
+const DEFAULT_HTML_TEMPLATE_FETCH = `
 <html>
   <body>
     <a rel="noreferrer" href="{{ .url }}">{{ .url }}</a>
+  </body>
+</html>
+`
+const DEFAULT_HTML_TEMPLATE_SUBMIT = `
+<html>
+  <body>
+    <a rel="noreferrer" href="{{ .shorturl }}"> {{ .shorturl }}</a> &lt <- {{ .url }}
   </body>
 </html>
 `
@@ -33,27 +41,32 @@ const (
 )
 
 type server struct {
-	logUrls        bool
-	renderTemplate string
-	decayTime      time.Duration
-	decayUses      int
-	endpoint       string
-	laddr          string
-	shortbytes     int
-	linkPrefix     string
-	dumpFile       string
-	cacheControl   string
-	schema         map[string]interface{}
+	logUrls                             bool
+	rawTemplateFetch, rawTemplateSubmit string
+	decayTime                           time.Duration
+	decayUses                           int
+	endpoint                            string
+	laddr                               string
+	shortbytes                          int
+	linkPrefix                          string
+	dumpFile                            string
+	cacheControl                        string
+	schema                              map[string]interface{}
 
-	renderer *template.Template
-	c        *collection.Collection
+	renderFetch  *template.Template
+	renderSubmit *template.Template
+	c            *collection.Collection
 }
 
 func urlToMap(u *url.URL) map[string]string {
 	return map[string]string{"url": u.String()}
 }
 
-func (s *server) setCaching(w http.ResponseWriter, ct string, e *collection.Entry) {
+func urlsToMap(shorturl string, url *url.URL) map[string]string {
+	return map[string]string{"shorturl": shorturl, "url": url.String()}
+}
+
+func (s *server) setCaching(w http.ResponseWriter) {
 	w.Header().Set("Vary", "Accept")
 	w.Header().Set("Cache-Control", s.cacheControl)
 }
@@ -78,11 +91,11 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	// use.
 	var rendererr error
 	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
-	s.setCaching(w, at, e)
+	s.setCaching(w)
 	switch at {
 	case "text/html":
 		w.Header().Add("Content-Type", at)
-		rendererr = s.renderer.Execute(w, urlToMap(e.URL))
+		rendererr = s.renderFetch.Execute(w, urlToMap(e.URL))
 	case "application/json":
 		buf, err := json.Marshal(urlToMap(e.URL))
 		if err != nil {
@@ -108,7 +121,7 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	log.Printf("fetch: %s (%s)", short, w.Header().Get("Content-Type"))
 }
 
-func (s *server) submit(w http.ResponseWriter, long string) {
+func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 	u, err := url.Parse(long)
 	if err != nil {
 		log.Print("submit: invalid url: ", err)
@@ -135,14 +148,45 @@ func (s *server) submit(w http.ResponseWriter, long string) {
 		return
 	}
 
+	var rendererr error
+	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
+	s.setCaching(w)
+	shorturl := s.linkPrefix + shortname
+	rw := &bytes.Buffer{}
+	switch at {
+	case "text/html":
+		rendererr = s.renderSubmit.Execute(rw, urlToMap(u))
+		if rendererr == nil {
+			w.Header().Add("Content-Type", at)
+		} else {
+			log.Print("fetch: html render failed: ", rendererr)
+		}
+	case "application/json":
+		e := json.NewEncoder(rw)
+		rendererr = e.Encode(urlsToMap(shorturl, u))
+		if rendererr == nil {
+			w.Header().Add("Content-Type", at)
+		} else {
+			log.Print("fetch: cannot render as json: ", err)
+		}
+	default:
+		w.Header().Add("Content-Type", "text/plain")
+		rw.WriteString(fmt.Sprintf("%s <- %s", shorturl, u.String()))
+		rendererr = nil
+	}
+	if rendererr != nil {
+		s.resetCaching(w)
+		log.Print("fetch: response rendering failed: ", rendererr)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	rw.WriteTo(w)
+
 	if s.logUrls {
 		log.Print("submit: ", shortname, " <- ", u)
 	} else {
 		log.Print("submit: ", shortname)
 	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(
-		fmt.Sprintf("%s%s <- %s", s.linkPrefix, shortname, u)))
 }
 
 func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -163,7 +207,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	s.submit(w, raws[1])
+	s.submit(r, w, raws[1])
 }
 
 func (s *server) reaper(ctx context.Context, t time.Duration) {
@@ -269,10 +313,15 @@ func main() {
 		3,
 		"Length of the random number in bytes which represents the shortname")
 	flag.StringVar(
-		&s.renderTemplate,
-		"render-html-template",
-		DEFAULT_HTML_TEMPLATE,
-		"HTML response template for the shortened URL")
+		&s.rawTemplateFetch,
+		"render-html-template-fetch",
+		DEFAULT_HTML_TEMPLATE_FETCH,
+		"HTML response template for *fetching* the shortened URL")
+	flag.StringVar(
+		&s.rawTemplateSubmit,
+		"render-html-template-submit",
+		DEFAULT_HTML_TEMPLATE_SUBMIT,
+		"HTML response template for *submitting* a new URL")
 	flag.StringVar(
 		&s.dumpFile,
 		"dump-file",
@@ -286,8 +335,10 @@ func main() {
 		"Cache-Control header included in all our responses")
 	flag.Parse()
 
-	s.renderer = template.Must(
-		template.New("renderer").Parse(s.renderTemplate))
+	s.renderFetch = template.Must(
+		template.New("renderFetch").Parse(s.rawTemplateFetch))
+	s.renderSubmit = template.Must(
+		template.New("renderSubmit").Parse(s.rawTemplateSubmit))
 
 	for _, scheme := range strings.Split(schema, ",") {
 		s.schema[scheme] = true
