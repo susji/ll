@@ -5,8 +5,8 @@ proxy_cache_key $request_uri$http_accept$content_type;
 server {
         limit_req zone=ll_per_ip burst=4 nodelay;
 
-        root /var/www/empty/html;
-        index index.html;
+        root /var/www/html;
+        index index.html index.nginx-debian.html;
 
         server_name yourdomain;
 
