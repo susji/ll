@@ -1,4 +1,6 @@
 limit_req_zone $binary_remote_addr zone=ll_per_ip:20m rate=2r/m;
+proxy_cache_path /var/lib/nginx/_ll-cache keys_zone=ll_cache:20m levels=1:2 inactive=24h;
+proxy_cache_key $request_uri$http_accept$content_type;
 
 server {
         limit_req zone=ll_per_ip burst=4 nodelay;
@@ -15,6 +17,7 @@ server {
 
         location / {
                 proxy_pass http://127.0.0.1:19589;
+                proxy_cache ll_cache;
         }
 
     listen [::]:443 ssl ipv6only=on; # managed by Certbot
