@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"html/template"
@@ -45,7 +46,11 @@ type server struct {
 	c        *collection.Collection
 }
 
-func (s *server) fetch(w http.ResponseWriter, short string) {
+func urlToMap(u *url.URL) map[string]string {
+	return map[string]string{"url": u.String()}
+}
+
+func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	e, last := s.c.Fetch(short)
 	if e == nil {
 		log.Print("fetch: not found: ", short)
@@ -55,11 +60,34 @@ func (s *server) fetch(w http.ResponseWriter, short string) {
 	if last {
 		log.Print("fetch: decayed due to usage: ", short)
 	}
-	w.WriteHeader(http.StatusOK)
-	data := map[string]string{"url": e.URL.String()}
-	err := s.renderer.Execute(w, data)
-	if err != nil {
-		log.Print("fetch: template execute failed: ", err)
+
+	// We're not even trying to handle this properly. We'll just
+	// get the first MIME type which looks like a value we can
+	// use.
+	var rendererr error
+	switch strings.SplitN(r.Header.Get("Accept"), ",", 2)[0] {
+	case "text/html":
+		w.Header().Add("Content-Type", "text/html")
+		rendererr = s.renderer.Execute(w, urlToMap(e.URL))
+	case "application/json":
+		buf, err := json.Marshal(urlToMap(e.URL))
+		if err != nil {
+			log.Print("fetch: cannot render as json: ", err)
+			rendererr = err
+		} else {
+			w.Header().Add("Content-Type", "application/json")
+			w.Write(buf)
+		}
+	default:
+		w.Header().Add("Content-Type", "text/plain")
+		w.Write([]byte(e.URL.String()))
+		rendererr = nil
+
+	}
+	if rendererr != nil {
+		log.Print("fetch: response rendering failed: ", rendererr)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	log.Print("fetch: ", short)
 }
@@ -110,7 +138,7 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	raws := strings.SplitN(r.URL.Path[1:], "/", 2)
 
 	if len(raws) == 1 {
-		s.fetch(w, raws[0])
+		s.fetch(r, w, raws[0])
 		return
 	}
 
