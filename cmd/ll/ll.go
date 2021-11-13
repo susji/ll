@@ -65,12 +65,12 @@ func urlsToMap(shorturl string, url *url.URL) map[string]string {
 	return map[string]string{"shorturl": shorturl, "url": url.String()}
 }
 
-func (s *server) setCaching(w http.ResponseWriter) {
+func (s *server) yesCaching(w http.ResponseWriter) {
 	w.Header().Set("Vary", "Accept")
 	w.Header().Set("Cache-Control", s.cacheControl)
 }
 
-func (s *server) resetCaching(w http.ResponseWriter) {
+func (s *server) noCaching(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-store")
 }
 
@@ -107,12 +107,12 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 
 	}
 	if rendererr != nil {
-		s.resetCaching(w)
+		s.noCaching(w)
 		log.Print("fetch: response rendering failed: ", rendererr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	s.setCaching(w)
+	s.yesCaching(w)
 	w.Header().Add("Content-Type", ct)
 	_, werr := rw.WriteTo(w)
 	if werr != nil {
@@ -167,12 +167,12 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 		rendererr = nil
 	}
 	if rendererr != nil {
-		s.resetCaching(w)
+		s.noCaching(w)
 		log.Print("fetch: response rendering failed: ", rendererr)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	s.setCaching(w)
+	s.yesCaching(w)
 	w.Header().Set("Content-Type", ct)
 	_, werr := rw.WriteTo(w)
 	if werr != nil {
