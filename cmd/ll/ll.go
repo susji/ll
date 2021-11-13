@@ -153,24 +153,17 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 	s.setCaching(w)
 	shorturl := s.linkPrefix + shortname
 	rw := &bytes.Buffer{}
+	var ct string
 	switch at {
 	case "text/html":
+		ct = at
 		rendererr = s.renderSubmit.Execute(rw, urlToMap(u))
-		if rendererr == nil {
-			w.Header().Add("Content-Type", at)
-		} else {
-			log.Print("fetch: html render failed: ", rendererr)
-		}
 	case "application/json":
+		ct = at
 		e := json.NewEncoder(rw)
 		rendererr = e.Encode(urlsToMap(shorturl, u))
-		if rendererr == nil {
-			w.Header().Add("Content-Type", at)
-		} else {
-			log.Print("fetch: cannot render as json: ", err)
-		}
 	default:
-		w.Header().Add("Content-Type", "text/plain")
+		ct = "text/plain"
 		rw.WriteString(fmt.Sprintf("%s <- %s", shorturl, u.String()))
 		rendererr = nil
 	}
@@ -180,6 +173,7 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", ct)
 	rw.WriteTo(w)
 
 	if s.logUrls {
