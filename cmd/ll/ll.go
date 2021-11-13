@@ -90,7 +90,6 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 	// use.
 	var rendererr error
 	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
-	s.setCaching(w)
 	var ct string
 	rw := &bytes.Buffer{}
 	switch at {
@@ -113,6 +112,7 @@ func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	s.setCaching(w)
 	w.Header().Add("Content-Type", ct)
 	_, werr := rw.WriteTo(w)
 	if werr != nil {
@@ -150,7 +150,6 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 
 	var rendererr error
 	at := strings.SplitN(r.Header.Get("Accept"), ",", 2)[0]
-	s.setCaching(w)
 	shorturl := s.linkPrefix + shortname
 	rw := &bytes.Buffer{}
 	var ct string
@@ -173,6 +172,7 @@ func (s *server) submit(r *http.Request, w http.ResponseWriter, long string) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	s.setCaching(w)
 	w.Header().Set("Content-Type", ct)
 	_, werr := rw.WriteTo(w)
 	if werr != nil {
