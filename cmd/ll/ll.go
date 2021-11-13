@@ -56,12 +56,10 @@ func urlToMap(u *url.URL) map[string]string {
 func (s *server) setCaching(w http.ResponseWriter, ct string, e *collection.Entry) {
 	w.Header().Set("Vary", "Accept")
 	w.Header().Set("Cache-Control", s.cacheControl)
-	w.Header().Set("ETag", e.URL.String()+ct)
 }
 
 func (s *server) resetCaching(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Del("ETag")
 }
 
 func (s *server) fetch(r *http.Request, w http.ResponseWriter, short string) {
