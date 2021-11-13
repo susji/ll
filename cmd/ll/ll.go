@@ -18,7 +18,7 @@ import (
 	"github.com/susji/ll/collection"
 )
 
-const DEFAULT_TEMPLATE = `
+const DEFAULT_HTML_TEMPLATE = `
 <html>
   <body>
     <a rel="noreferrer" href="{{ .url }}">{{ .url }}</a>
@@ -254,9 +254,9 @@ func main() {
 		"Length of shortened URLs")
 	flag.StringVar(
 		&s.renderTemplate,
-		"render-template",
-		DEFAULT_TEMPLATE,
-		"Page template for the shortened URL")
+		"render-html-template",
+		DEFAULT_HTML_TEMPLATE,
+		"HTML response template for the shortened URL")
 	flag.StringVar(
 		&s.dumpFile,
 		"dump-file",
