@@ -1,4 +1,5 @@
 # deploying
 
-    $ scp * yourserver:
-    $ ssh yourserver 'sudo /bin/sh $HOME/x.sh'
+    $ scp * ${server}:
+    $ ssh -t ${server} \
+		'export YOUR_DOMAIN=yourdomain; sudo --preserve-env=YOUR_DOMAIN /bin/sh $HOME/x.sh'
