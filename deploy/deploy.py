@@ -10,9 +10,8 @@ if not host.data.LL_DOMAIN:
 
 DOM = host.data.LL_DOMAIN
 
-apt.packages(
-    name="Ensure all relevant apt packages",
-    packages=["nginx", "fail2ban", "certbot", "python3-certbot-nginx"])
+apt.packages(name="Ensure all relevant apt packages",
+             packages=["nginx", "certbot", "python3-certbot-nginx"])
 
 server.user("_ll",
             shell="/usr/sbin/nologin",
