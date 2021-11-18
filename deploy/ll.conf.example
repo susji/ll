@@ -1,0 +1,8 @@
+LL_DECAY_TIME=168h
+LL_DECAY_USES=25
+LL_LOG_URLS=false
+LL_ENDPOINT=submit
+LL_LINK_PREFIX=https://example.com/
+LL_ACCEPT_SCHEMA=https,http
+LL_DUMP_FILE=/var/lib/ll/ll-dump.json
+LL_SHORT_BYTES=4
