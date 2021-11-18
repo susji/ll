@@ -1,9 +1,9 @@
-limit_req_zone $binary_remote_addr zone=ll_per_ip:20m rate=2r/m;
+limit_req_zone $binary_remote_addr zone=ll_per_ip:20m rate=4r/m;
 proxy_cache_path /var/lib/nginx/_ll-cache keys_zone=ll_cache:20m levels=1:2 inactive=24h;
 proxy_cache_key $request_uri$http_accept$content_type;
 
 server {
-    limit_req zone=ll_per_ip burst=4 nodelay;
+    limit_req zone=ll_per_ip burst=8 nodelay;
 
     root /var/www/html;
     index index.html index.nginx-debian.html;
