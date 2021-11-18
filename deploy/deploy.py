@@ -8,6 +8,8 @@ SUDO = True
 if not host.data.LL_DOMAIN:
     raise RuntimeError("Define LL_DOMAIN")
 
+DOM = host.data.LL_DOMAIN
+
 apt.packages(
     name="Ensure all relevant apt packages",
     packages=["nginx", "fail2ban", "certbot", "python3-certbot-nginx"])
@@ -24,6 +26,10 @@ files.directory(name="Ensure data directory is present",
                 group="_ll",
                 mode=750,
                 recursive=True)
+
+systemd.service(name="Ensure ll is stopped when updating binary",
+                service="ll.service",
+                running=False)
 
 files.put(name="Upload daemon binary",
           src="../ll",
@@ -51,8 +57,25 @@ systemd.service(name="Ensure ll service is enabled and running",
                 running=True,
                 restarted=True)
 
-files.put(name="NGINX configuration",
-          src="yourdomain",
-          dest=f"/etc/nginx/sites-available/{host.data.LL_DOMAIN}",
-          user="root",
-          group="root")
+files.template(name=f"NGINX configuration for {DOM}",
+               src="nginx.j2",
+               dest=f"/etc/nginx/sites-available/{DOM}",
+               user="root",
+               group="root")
+
+files.link(name=f"Enable nginx site for {DOM}",
+           present=True,
+           path=f"/etc/nginx/sites-enabled/{DOM}",
+           target=f"/etc/nginx/sites-available/{DOM}")
+
+server.shell(name=F"Make sure certbot is enabled for {DOM}",
+             commands=[
+                 f"certbot --non-interactive --nginx -d {DOM}",
+                 f"certbot renew --non-interactive --dry-run", "nginx -t"
+             ])
+
+systemd.service(name="Ensure nginx is cycled",
+                service="nginx.service",
+                enabled=True,
+                running=True,
+                restarted=True)

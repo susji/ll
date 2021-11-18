@@ -8,7 +8,7 @@ server {
     root /var/www/html;
     index index.html index.nginx-debian.html;
 
-    server_name yourdomain;
+    server_name {{ host.data.LL_DOMAIN }};
 
     location = /robots.txt {
         add_header Content-Type text/plain;
