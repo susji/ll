@@ -19,6 +19,11 @@ import (
 	"github.com/susji/ll/collection"
 )
 
+var (
+	version   = "v0.dev"
+	buildtime = "<no time>"
+)
+
 const DEFAULT_CACHE_CONTROL = `public, max-age=60`
 
 const DEFAULT_HTML_TEMPLATE_FETCH = `
@@ -382,6 +387,7 @@ func main() {
 	}()
 	go s.reaper(ctx, reapTime)
 
+	log.Printf("ll version: %s built at %s", version, buildtime)
 	log.Print("Listen address........ ", s.laddr)
 	log.Print("Submission endpoint... ", s.endpoint)
 	log.Print("Short bytes........... ", s.shortbytes)
