@@ -44,7 +44,7 @@ files.put(name="Upload configuration file",
 
 files.put(name="Upload systemd unit file",
           src="ll.service",
-          dest="/etc/systemd/system/sp.service",
+          dest="/etc/systemd/system/ll.service",
           user="root",
           group="root")
 
