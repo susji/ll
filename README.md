@@ -17,8 +17,7 @@ proxy, so nginx stuff is included in the example deployment file.
 	$ ~/venv-pyinfra/bin/pip install -r deploy/requirements.txt
 	$ source ~/venv-pyinfra/bin/activate
 	$ cd deploy
-	$ cp misc/ll.conf.example ll.conf
-	$ [edit ll.conf your liking]
+	$ cp misc/ll.conf.example ll.conf   # edit ll.conf to your liking
 	$ pyinfra --data LL_DOMAIN=a.example.com a.example.com deploy.py
 
 ## todo
