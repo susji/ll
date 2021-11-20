@@ -1,7 +1,9 @@
 # ll
 
-`ll` is a minimalistic URL shortener server. You probably want to run
-it behind some TLS-terminating reverse proxy.
+`ll` is a minimalistic URL shortener server. Presently it's mainly a
+proof-of-concept, so I advise against running it in production. In any
+case, you probably want to run it behind some TLS-terminating reverse
+proxy, so nginx stuff is included in the example deployment file.
 
 ## usage
 
@@ -18,3 +20,7 @@ it behind some TLS-terminating reverse proxy.
 	$ cp misc/ll.conf.example ll.conf
 	$ [edit ll.conf your liking]
 	$ pyinfra --data LL_DOMAIN=a.example.com a.example.com deploy.py
+
+## todo
+
+- [ ] actual packaging like `.deb` building
