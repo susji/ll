@@ -14,7 +14,7 @@ proxy, so nginx stuff is included in the example deployment file.
 	$ cd ll
 	$ make
 	$ python3 -m venv ~/venv-pyinfra
-	$ ~/venv-pyinfra/bin/pip install pyinfra
+	$ ~/venv-pyinfra/bin/pip install -r deploy/requirements.txt
 	$ source ~/venv-pyinfra/bin/activate
 	$ cd deploy
 	$ cp misc/ll.conf.example ll.conf
