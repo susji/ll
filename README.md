@@ -9,7 +9,7 @@ it behind some TLS-terminating reverse proxy.
 
 ## deploying
 
-	$ cd sp
+	$ cd ll
 	$ make
 	$ python3 -m venv ~/venv-pyinfra
 	$ ~/venv-pyinfra/bin/pip install pyinfra
