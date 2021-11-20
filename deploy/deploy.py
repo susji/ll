@@ -68,7 +68,7 @@ files.link(name=f"Enable nginx site for {DOM}",
            target=f"/etc/nginx/sites-available/{DOM}")
 
 server.shell(
-    name=F"Make sure certbot is enabled for {DOM}",
+    name=f"Make sure certbot is enabled for {DOM}",
     commands=[f"certbot --non-interactive --nginx -d {DOM}", "nginx -t"])
 
 systemd.service(name="Ensure nginx is cycled",
