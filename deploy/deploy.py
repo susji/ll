@@ -34,7 +34,8 @@ files.put(name="Upload daemon binary",
           src="../ll",
           dest="/usr/local/bin/ll",
           user="root",
-          group="root")
+          group="root",
+          mode=755)
 
 files.put(name="Upload configuration file",
           src="ll.conf",
